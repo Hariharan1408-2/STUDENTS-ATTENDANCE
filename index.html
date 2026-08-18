@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paavai Attendance System | CSE-B</title>
+    <!-- CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        indigo: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8',
+                            500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .dark body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .college-header-gradient {
+            background: linear-gradient(135deg, #1E1B4B, #312E81, #4338CA);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        .glass-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ==========================================
+        // DATA CONSTANTS
+        // ==========================================
+        const INITIAL_STUDENTS = [
+            { id: "1", sno: 1, regNo: "622125104066", name: "GOKILESWARAN J" },
+            { id: "2", sno: 2, regNo: "622125104067", name: "GOKUL R" },
+            { id: "3", sno: 3, regNo: "622125104068", name: "GOKULPRASATH S" },
+            { id: "4", sno: 4, regNo: "622125104069", name: "GOPI N" },
+            { id: "5", sno: 5, regNo: "622125104070", name: "GOWTHAM B" },
+            { id: "6", sno: 6, regNo: "622125104071", name: "GOWTHAM K" },
+            { id: "7", sno: 7, regNo: "622125104072", name: "GOWTHAM N" },
+            { id: "8", sno: 8, regNo: "622125104073", name: "GOWTHAM S" },
+            { id: "9", sno: 9, regNo: "622125104074", name: "GOWTHAM S" },
+            { id: "10", sno: 10, regNo: "622125104075", name: "GOWTHAMAN M" },
+            { id: "11", sno: 11, regNo: "622125104076", name: "GOWTHAMAN V A" },
+            { id: "12", sno: 12, regNo: "622125104077", name: "GUHAN K" },
+            { id: "13", sno: 13, regNo: "622125104078", name: "HARIHARAN I" },
+            { id: "14", sno: 14, regNo: "622125104079", name: "HARIHARAN R" },
+            { id: "15", sno: 15, regNo: "622125104080", name: "HARIKAARTHICK C" },
+            { id: "16", sno: 16, regNo: "622125104081", name: "HARINI N" },
+            { id: "17", sno: 17, regNo: "622125104082", name: "HARIPRASATH R" },
+            { id: "18", sno: 18, regNo: "622125104083", name: "HARISH A" },
+            { id: "19", sno: 19, regNo: "622125104084", name: "HARIVARTHINI S" },
+            { id: "20", sno: 20, regNo: "622125104085", name: "HARSHINI G" },
+            { id: "21", sno: 21, regNo: "622125104086", name: "HARSHINI T V" },
+            { id: "22", sno: 22, regNo: "622125104087", name: "HARSHITHA S" },
+            { id: "23", sno: 23, regNo: "622125104088", name: "HEERA R" },
+            { id: "24", sno: 24, regNo: "622125104089", name: "HEMAKESH K" },
+            { id: "25", sno: 25, regNo: "622125104090", name: "HEMNATH A" },
+            { id: "26", sno: 26, regNo: "622125104091", name: "ILAYA BHARATHI M" },
+            { id: "27", sno: 27, regNo: "622125104092", name: "INDUPREETHA S" },
+            { id: "28", sno: 28, regNo: "622125104093", name: "ISHVA S" },
+            { id: "29", sno: 29, regNo: "622125104094", name: "ISHVA S D" },
+            { id: "30", sno: 30, regNo: "622125104095", name: "JAGAN A" },
+            { id: "31", sno: 31, regNo: "622125104096", name: "JAHEERUNISHA A" },
+            { id: "32", sno: 32, regNo: "622125104097", name: "JANARDHANAN S" },
+            { id: "33", sno: 33, regNo: "622125104098", name: "JAYA PRADHAP S" },
+            { id: "34", sno: 34, regNo: "622125104099", name: "JAYA SREE P L" },
+            { id: "35", sno: 35, regNo: "622125104100", name: "JAYAKUMAR J" },
+            { id: "36", sno: 36, regNo: "622125104101", name: "JAYAPRAKASH S" },
+            { id: "37", sno: 37, regNo: "622125104102", name: "JAYAPRAKASH V" },
+            { id: "38", sno: 38, regNo: "622125104103", name: "JEEVA N" },
+            { id: "39", sno: 39, regNo: "622125104104", name: "JEEVARAJAN D" },
+            { id: "40", sno: 40, regNo: "622125104105", name: "JEEVITHA D" },
+            { id: "41", sno: 41, regNo: "622125104106", name: "JEEVITHA G" },
+            { id: "42", sno: 42, regNo: "622125104107", name: "JEEVITHA S" },
+            { id: "43", sno: 43, regNo: "622125104108", name: "JEGAN N" },
+            { id: "44", sno: 44, regNo: "622125104109", name: "KABILESHWARAN M" },
+            { id: "45", sno: 45, regNo: "622125104110", name: "KAILASH R" },
+            { id: "46", sno: 46, regNo: "622125104111", name: "KALAI ARASU J" },
+            { id: "47", sno: 47, regNo: "622125104112", name: "KAMESH K" },
+            { id: "48", sno: 48, regNo: "622125104113", name: "KANISHKA K" },
+            { id: "49", sno: 49, regNo: "622125104114", name: "KANISKA D M" },
+            { id: "50", sno: 50, regNo: "622125104115", name: "KARISHMA R" },
+            { id: "51", sno: 51, regNo: "622125104116", name: "KARTHICK RAJA S" },
+            { id: "52", sno: 52, regNo: "622125104117", name: "KARTHIKADEVI S" },
+            { id: "53", sno: 53, regNo: "622125104118", name: "KARTHIKEYAN T M" },
+            { id: "54", sno: 54, regNo: "622125104119", name: "KAVI PRATHAP A" },
+            { id: "55", sno: 55, regNo: "622125104120", name: "KAVIRAJ V" },
+            { id: "56", sno: 56, regNo: "622125104121", name: "KAVIYA L" },
+            { id: "57", sno: 57, regNo: "622125104122", name: "KAVIYA S" },
+            { id: "58", sno: 58, regNo: "622125104123", name: "KAVIYA S" },
+            { id: "59", sno: 59, regNo: "622125104124", name: "KAVIYA SHREE R B" },
+            { id: "60", sno: 60, regNo: "622125104125", name: "KAVIYARASU M" },
+            { id: "61", sno: 61, regNo: "622125104126", name: "KEERTHANA A" }
+        ];
+
+        const PERIODS = [
+            { id: 1, name: "Period 1", time: "09:15 - 10:10" },
+            { id: 2, name: "Period 2", time: "10:10 - 11:05" },
+            { id: 3, name: "Period 3", time: "11:15 - 12:10" },
+            { id: 4, name: "Period 4", time: "12:10 - 01:00" },
+            { id: 5, name: "Period 5", time: "02:00 - 02:50" },
+            { id: 6, name: "Period 6", time: "02:50 - 03:40" },
+            { id: 7, name: "Period 7", time: "03:40 - 04:30" }
+        ];
+
+        const ACADEMIC_YEARS = ["2026-2027", "2025-2026", "2024-2025", "2023-2024"];
+        const SEMESTERS = ["Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6", "Semester 7", "Semester 8"];
+
+        // ==========================================
+        // STORAGE & LOGIC SERVICE
+        // ==========================================
+        const StorageService = {
+            generateSeedHistory() {
+                const history = [];
+                const baseDate = new Date();
+                let sessionId = 1;
+                
+                for (let dateIdx = 0; dateIdx < 10; dateIdx++) {
+                    const sessionDate = new Date(baseDate);
+                    sessionDate.setDate(sessionDate.getDate() - dateIdx);
+                    // Skip weekends
+                    if(sessionDate.getDay() === 0 || sessionDate.getDay() === 6) continue;
+                    
+                    const dateStr = sessionDate.toISOString().split('T')[0];
+                    
+                    // Generate 2 periods per day
+                    for(let p = 0; p < 2; p++) {
+                        const periodId = (dateIdx % 7) + 1;
+                        
+                        const records = {};
+                        INITIAL_STUDENTS.forEach((student, studentIdx) => {
+                            const seedVal = (studentIdx * 17 + dateIdx * 13 + periodId * 7) % 100;
+                            let status = 'P';
+                            if (seedVal > 92) status = 'A';
+                            else if (seedVal > 84) status = 'OD';
+                            records[student.id] = status;
+                        });
+                        
+                        history.push({
+                            id: `session-${sessionId++}`,
+                            date: dateStr,
+                            periodId: periodId,
+                            academicYear: ACADEMIC_YEARS[0],
+                            semester: SEMESTERS[4],
+                            records: records,
+                            timestamp: new Date().getTime()
+                        });
+                    }
+                }
+                return history;
+            },
+
+            init() {
+                // Clear old history if subjectId exists or has old "L" status
+                const oldHistory = localStorage.getItem('paavai_history');
+                if (oldHistory && (oldHistory.includes('subjectId') || oldHistory.includes('"L"'))) {
+                    localStorage.removeItem('paavai_history');
+                    localStorage.removeItem('paavai_draft');
+                }
+
+                if (!localStorage.getItem('paavai_students')) {
+                    localStorage.setItem('paavai_students', JSON.stringify(INITIAL_STUDENTS));
+                }
+                if (!localStorage.getItem('paavai_history')) {
+                    localStorage.setItem('paavai_history', JSON.stringify(this.generateSeedHistory()));
+                }
+                let users = [];
+                if (localStorage.getItem('paavai_staff_users')) {
+                    try {
+                        users = JSON.parse(localStorage.getItem('paavai_staff_users'));
+                    } catch (e) {
+                        users = [];
+                    }
+                }
+                
+                const hasOldOwner = users.some(u => u.email === 'owner@paavai.edu.in');
+                const hasNewOwner = users.some(u => u.email === 'Hari@1408');
+                if (users.length === 0 || hasOldOwner || !hasNewOwner) {
+                    users = users.filter(u => u.email !== 'owner@paavai.edu.in');
+                    if (!users.some(u => u.email === 'Hari@1408')) {
+                        users.push({ email: 'Hari@1408', name: 'Hari HOD', password: '14082008', role: 'owner', status: 'approved' });
+                    }
+                    if (!users.some(u => u.email === 'faculty@paavai.edu.in')) {
+                        users.push({ email: 'faculty@paavai.edu.in', name: 'Prof. R. Selvakumar', password: 'faculty', role: 'staff', status: 'approved' });
+                    }
+                    localStorage.setItem('paavai_staff_users', JSON.stringify(users));
+                }
+                if (!localStorage.getItem('paavai_staff_passcode')) {
+                    localStorage.setItem('paavai_staff_passcode', 'paavaistaff');
+                }
+            },
+
+            getStudents() {
+                const students = JSON.parse(localStorage.getItem('paavai_students') || '[]');
+                const history = this.getHistory();
+                
+                return students.map(student => {
+                    let total = 0, present = 0, od = 0, absent = 0;
+                    history.forEach(session => {
+                        if (session.records[student.id]) {
+                            total++;
+                            if (session.records[student.id] === 'P') present++;
+                            if (session.records[student.id] === 'OD') od++;
+                            if (session.records[student.id] === 'A') absent++;
+                        }
+                    });
+                    const percent = total > 0 ? Math.round(((present + od) / total) * 100) : 100;
+                    let health = 'healthy';
+                    if (percent < 60) health = 'critical';
+                    else if (percent < 75) health = 'warning';
+                    
+                    return { ...student, stats: { total, present, od, absent, percent, health } };
+                });
+            },
+
+            getStaffUsers() {
+                return JSON.parse(localStorage.getItem('paavai_staff_users') || '[]');
+            },
+
+            saveStaffUsers(users) {
+                localStorage.setItem('paavai_staff_users', JSON.stringify(users));
+            },
+
+            getHistory() {
+                return JSON.parse(localStorage.getItem('paavai_history') || '[]');
+            },
+
+            saveHistorySession(sessionData) {
+                let history = this.getHistory();
+                if (sessionData.id) {
+                    history = history.map(h => h.id === sessionData.id ? { ...h, ...sessionData, timestamp: new Date().getTime() } : h);
+                } else {
+                    history.push({
+                        ...sessionData,
+                        id: 'session-' + new Date().getTime(),
+                        timestamp: new Date().getTime()
+                    });
+                }
+                localStorage.setItem('paavai_history', JSON.stringify(history));
+                this.clearDraft();
+            },
+
+            deleteHistorySession(sessionId) {
+                let history = this.getHistory();
+                history = history.filter(h => h.id !== sessionId);
+                localStorage.setItem('paavai_history', JSON.stringify(history));
+            },
+
+            findDuplicateSession(date, periodId) {
+                const history = this.getHistory();
+                return history.find(h => h.date === date && h.periodId == periodId);
+            },
+
+            saveDraft(draft) {
+                localStorage.setItem('paavai_draft', JSON.stringify(draft));
+            },
+
+            getDraft() {
+                return JSON.parse(localStorage.getItem('paavai_draft') || 'null');
+            },
+
+            clearDraft() {
+                localStorage.removeItem('paavai_draft');
+            },
+
+            getUser() {
+                return JSON.parse(localStorage.getItem('paavai_user') || 'null');
+            },
+
+            setUser(user) {
+                localStorage.setItem('paavai_user', JSON.stringify(user));
+            },
+
+            logout() {
+                localStorage.removeItem('paavai_user');
+            }
+        };
+
+        // ==========================================
+        // EXPORT SERVICES
+        // ==========================================
+        const ExportService = {
+            exportPDF(session, students) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.text("PAAVAI ENGINEERING COLLEGE", 105, 15, { align: "center" });
+                doc.setFontSize(12);
+                doc.text("DEPARTMENT OF CSE - B", 105, 22, { align: "center" });
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                const period = PERIODS.find(p => p.id == session.periodId);
+                
+                doc.text(`Date: ${session.date}`, 14, 35);
+                doc.text(`Period: ${period ? period.name + ' (' + period.time + ')' : 'N/A'}`, 14, 41);
+                doc.text(`Academic Year: ${session.academicYear}`, 130, 35);
+                doc.text(`Semester: ${session.semester}`, 130, 41);
+                
+                const tableData = students.map(s => {
+                    const status = session.records[s.id] || '-';
+                    const statusText = status === 'P' ? 'Present' : status === 'OD' ? 'On Duty' : status === 'A' ? 'Absent' : 'Unmarked';
+                    return [s.sno, s.regNo, s.name, statusText];
+                });
+                
+                doc.autoTable({
+                    startY: 48,
+                    head: [['S.No', 'Reg. No', 'Student Name', 'Status']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [49, 46, 129] },
+                    didParseCell: function(data) {
+                        if (data.section === 'body' && data.column.index === 3) {
+                            if (data.cell.raw === 'Present') data.cell.styles.textColor = [21, 128, 61];
+                            if (data.cell.raw === 'On Duty') data.cell.styles.textColor = [2, 132, 199];
+                            if (data.cell.raw === 'Absent') data.cell.styles.textColor = [185, 28, 28];
+                        }
+                    }
+                });
+                
+                let present = 0, od = 0, absent = 0;
+                Object.values(session.records).forEach(v => {
+                    if(v==='P') present++;
+                    if(v==='OD') od++;
+                    if(v==='A') absent++;
+                });
+                const total = present + od + absent;
+                const perc = total > 0 ? Math.round(((present+od)/total)*100) : 0;
+                
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFont("helvetica", "bold");
+                doc.text(`Summary:`, 14, finalY);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Total: ${total} | Present: ${present} | OD: ${od} | Absent: ${absent} | Attendance: ${perc}%`, 14, finalY + 6);
+                
+                doc.text("Faculty Signature", 14, finalY + 30);
+                doc.text("HOD", 105, finalY + 30, { align: "center" });
+                doc.text("Principal", 196, finalY + 30, { align: "right" });
+                
+                doc.save(`Attendance_${session.date}_Period_${session.periodId}.pdf`);
+            },
+            
+            exportExcel(session, students) {
+                if (!window.XLSX) return alert("Excel library not loaded.");
+                const wb = window.XLSX.utils.book_new();
+                const wsData = [
+                    ["PAAVAI ENGINEERING COLLEGE - CSE B"],
+                    ["Date", session.date, "Period", `Period ${session.periodId}`],
+                    ["Academic Year", session.academicYear, "Semester", session.semester],
+                    [],
+                    ["S.No", "Registration No", "Name", "Status"]
+                ];
+                
+                students.forEach(s => {
+                    const st = session.records[s.id];
+                    const stat = st === 'P' ? 'Present' : st === 'OD' ? 'On Duty' : st === 'A' ? 'Absent' : '-';
+                    wsData.push([s.sno, s.regNo, s.name, stat]);
+                });
+                
+                const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+                window.XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+                window.XLSX.writeFile(wb, `Attendance_${session.date}_Period_${session.periodId}.xlsx`);
+            },
+
+            exportStudentSummaryExcel(students) {
+                if (!window.XLSX) return alert("Excel library not loaded.");
+                const wb = window.XLSX.utils.book_new();
+                const wsData = [
+                    ["PAAVAI ENGINEERING COLLEGE - CSE B"],
+                    ["Overall Cumulative Attendance Summary Report"],
+                    ["Report Generated", new Date().toLocaleString()],
+                    [],
+                    ["S.No", "Registration No", "Name", "Total Classes", "Present", "On Duty (OD)", "Absent", "Attendance Percentage"]
+                ];
+                
+                students.forEach(s => {
+                    wsData.push([
+                        s.sno,
+                        s.regNo,
+                        s.name,
+                        s.stats.total,
+                        s.stats.present,
+                        s.stats.od,
+                        s.stats.absent,
+                        `${s.stats.percent}%`
+                    ]);
+                });
+                
+                const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+                window.XLSX.utils.book_append_sheet(wb, ws, "Attendance Summary");
+                window.XLSX.writeFile(wb, `Paavai_CSE_B_Overall_Attendance_Report.xlsx`);
+            }
+        };
+
+        // ==========================================
+        // REACT COMPONENTS
+        // ==========================================
+        const { useState, useEffect, useMemo, useCallback } = React;
+
+        // 1. Toast
+        const Toast = ({ message, type, onClose }) => {
+            useEffect(() => {
+                if (message) {
+                    const timer = setTimeout(onClose, 4000);
+                    return () => clearTimeout(timer);
+                }
+            }, [message, onClose]);
+
+            if (!message) return null;
+            
+            const colors = {
+                success: "bg-emerald-500",
+                info: "bg-indigo-500",
+                warning: "bg-amber-500",
+                error: "bg-rose-500"
+            };
+            
+            return (
+                <div className={`fixed bottom-20 md:bottom-6 right-6 ${colors[type] || colors.info} text-white px-4 py-3 rounded-lg shadow-xl z-50 flex items-center gap-3 animate-fade-in`}>
+                    <i data-lucide={type === 'success' ? 'check-circle' : type === 'warning' ? 'alert-triangle' : 'info'} className="w-5 h-5"></i>
+                    <span className="font-medium">{message}</span>
+                    <button onClick={onClose} className="ml-2 hover:opacity-75"><i data-lucide="x" className="w-4 h-4"></i></button>
+                </div>
+            );
+        };
+
+        // 2. Login Page
+        const LoginPage = ({ onLogin, students }) => {
+            const [activeTab, setActiveTab] = React.useState('student'); // 'student' or 'staff'
+            const [isSignUp, setIsSignUp] = React.useState(false);
+            
+            // Staff login fields
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            
+            // Staff signup fields
+            const [signupName, setSignupName] = React.useState('');
+            const [signupEmail, setSignupEmail] = React.useState('');
+            const [signupPassword, setSignupPassword] = React.useState('');
+            const [signupConfirm, setSignupConfirm] = React.useState('');
+            const [signupPasscode, setSignupPasscode] = React.useState(''); // fixed passcode
+            
+            // Student login selection
+            const [selectedStudentId, setSelectedStudentId] = React.useState('');
+
+            const handleStudentLogin = (e) => {
+                e.preventDefault();
+                if (!selectedStudentId) {
+                    alert("Please select your name.");
+                    return;
+                }
+                const stud = students.find(s => s.id === selectedStudentId);
+                if (stud) {
+                    onLogin({
+                        id: stud.id,
+                        email: `${stud.regNo}@paavai.edu.in`,
+                        name: stud.name,
+                        regNo: stud.regNo,
+                        role: 'student'
+                    });
+                }
+            };
+
+            const handleStaffLogin = (e) => {
+                e.preventDefault();
+                if (!email || !password) return alert("Please enter email and password.");
+                
+                const staffUsers = StorageService.getStaffUsers();
+                const matched = staffUsers.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+                
+                if (!matched || matched.password !== password) {
+                    alert("Invalid email or password.");
+                    return;
+                }
+                
+                if (matched.status !== 'approved' && matched.role !== 'owner') {
+                    alert("Your account is pending Owner's approval. Please check back later.");
+                    return;
+                }
+                
+                onLogin({
+                    email: matched.email,
+                    name: matched.name,
+                    role: matched.role // 'staff' or 'owner'
+                });
+            };
+
+            const handleSignUpSubmit = (e) => {
+                e.preventDefault();
+                if (!signupName || !signupEmail || !signupPassword || !signupPasscode) {
+                    alert("All fields are required.");
+                    return;
+                }
+                if (signupPassword !== signupConfirm) {
+                    alert("Passwords do not match.");
+                    return;
+                }
+                
+                // Verify passcode
+                const correctPasscode = localStorage.getItem('paavai_staff_passcode') || 'paavaistaff';
+                if (signupPasscode !== correctPasscode) {
+                    alert("Invalid Staff Passcode. Please request it from the Owner.");
+                    return;
+                }
+
+                const staffUsers = StorageService.getStaffUsers();
+                if (staffUsers.some(u => u.email.toLowerCase() === signupEmail.trim().toLowerCase())) {
+                    alert("An account with this email already exists.");
+                    return;
+                }
+
+                const newUser = {
+                    email: signupEmail.trim(),
+                    name: signupName.trim(),
+                    password: signupPassword,
+                    role: 'staff',
+                    status: 'pending'
+                };
+                
+                const updated = [...staffUsers, newUser];
+                StorageService.saveStaffUsers(updated);
+                
+                alert("Sign up successful! Your account is pending HOD/Owner approval.");
+                setIsSignUp(false);
+                setEmail(signupEmail);
+                setPassword('');
+            };
+
+            const quickDemoLogin = (demoEmail, demoPassword) => {
+                setEmail(demoEmail);
+                setPassword(demoPassword);
+                // Perform quick login
+                const staffUsers = StorageService.getStaffUsers();
+                const matched = staffUsers.find(u => u.email === demoEmail);
+                if (matched) {
+                    onLogin({
+                        email: matched.email,
+                        name: matched.name,
+                        role: matched.role
+                    });
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-900 college-header-gradient relative overflow-hidden p-4">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                    <div className="relative z-10 glass-card p-6 md:p-8 w-full max-w-lg mx-auto text-white border-white/10 bg-black/45 backdrop-blur-xl rounded-3xl shadow-2xl">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-white p-2 rounded-2xl shadow-lg border border-white/10 flex items-center justify-center">
+                            <img src="./logo.jpg" alt="Paavai Logo" className="w-full h-full object-contain rounded-xl" />
+                        </div>
+                        <h1 className="text-xl md:text-2xl font-black mb-1 tracking-wider text-center">PAAVAI ENGINEERING COLLEGE</h1>
+                        <p className="text-indigo-300 font-bold mb-6 text-xs md:text-sm text-center">DEPARTMENT OF CSE - B</p>
+
+                        {!isSignUp ? (
+                            <>
+                                {/* Tabs */}
+                                <div className="flex bg-slate-800/80 rounded-xl p-1 mb-6 border border-slate-700">
+                                    <button onClick={() => setActiveTab('student')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'student' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        Student Login
+                                    </button>
+                                    <button onClick={() => setActiveTab('staff')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'staff' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        Staff / Owner
+                                    </button>
+                                </div>
+
+                                {activeTab === 'student' ? (
+                                    <form onSubmit={handleStudentLogin} className="space-y-5">
+                                        <div className="text-center bg-indigo-950/45 p-4 rounded-2xl border border-indigo-900 text-xs md:text-sm text-slate-300">
+                                            <p className="font-semibold text-white mb-1"><i data-lucide="info" className="w-4 h-4 inline mr-1 text-indigo-400"></i> Read-Only Portal</p>
+                                            No password required for students. Select your profile to view your cumulative attendance, trends, and history.
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide">Select Your Profile</label>
+                                            <select value={selectedStudentId} onChange={e=>setSelectedStudentId(e.target.value)} required
+                                                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                                <option value="">-- Choose Name or Reg No --</option>
+                                                {students.map(s => (
+                                                    <option key={s.id} value={s.id} className="bg-slate-900">{s.regNo} — {s.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2">
+                                            <i data-lucide="log-in" className="w-5 h-5"></i> Enter Portal
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={handleStaffLogin} className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wide">Username or Email</label>
+                                            <input type="text" placeholder="Hari@1408 or faculty@paavai.edu.in" value={email} onChange={e=>setEmail(e.target.value)} required
+                                                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wide">Password</label>
+                                            <input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required
+                                                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                        </div>
+                                        
+                                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 mt-2">
+                                            <i data-lucide="lock" className="w-5 h-5"></i> Secure Login
+                                        </button>
+
+                                        <div className="flex gap-2 text-center text-xs justify-center pt-2">
+                                            <button type="button" onClick={() => quickDemoLogin('faculty@paavai.edu.in', 'faculty')} className="text-slate-400 hover:text-indigo-400 font-bold transition-colors">Staff Demo</button>
+                                            <span className="text-slate-600">|</span>
+                                            <button type="button" onClick={() => quickDemoLogin('Hari@1408', '14082008')} className="text-slate-400 hover:text-indigo-400 font-bold transition-colors">Owner Demo</button>
+                                        </div>
+
+                                        <div className="text-center pt-4 border-t border-slate-800 text-xs">
+                                            <p className="text-slate-400">Are you a staff member? <button type="button" onClick={() => setIsSignUp(true)} className="text-indigo-400 font-bold hover:underline">Sign Up here</button></p>
+                                        </div>
+                                    </form>
+                                )}
+                            </>
+                        ) : (
+                            <form onSubmit={handleSignUpSubmit} className="space-y-4">
+                                <h3 className="text-lg font-bold mb-1 text-center">Staff Sign Up</h3>
+                                <p className="text-xs text-slate-400 text-center mb-4 font-semibold">Request approval from HOD Owner after submitting registration.</p>
+                                
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Full Name</label>
+                                    <input type="text" placeholder="e.g. Prof. Kumar S" value={signupName} onChange={e=>setSignupName(e.target.value)} required
+                                        className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Email Address</label>
+                                    <input type="email" placeholder="faculty2@paavai.edu.in" value={signupEmail} onChange={e=>setSignupEmail(e.target.value)} required
+                                        className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Password</label>
+                                    <input type="password" placeholder="••••••••" value={signupPassword} onChange={e=>setSignupPassword(e.target.value)} required
+                                        className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Confirm Password</label>
+                                    <input type="password" placeholder="••••••••" value={signupConfirm} onChange={e=>setSignupConfirm(e.target.value)} required
+                                        className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Fixed Staff Passcode</label>
+                                    <input type="password" placeholder="Enter registration passcode" value={signupPasscode} onChange={e=>setSignupPasscode(e.target.value)} required
+                                        className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold text-indigo-300 tracking-widest placeholder:tracking-normal placeholder:font-normal" />
+                                    <span className="text-[10px] text-slate-400 block mt-1">Contact your Owner/Admin for the staff pre-registration passcode (default: paavaistaff).</span>
+                                </div>
+
+                                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 mt-2">
+                                    <i data-lucide="user-plus" className="w-5 h-5"></i> Submit Registration
+                                </button>
+                                
+                                <div className="text-center pt-2 text-xs">
+                                    <button type="button" onClick={() => setIsSignUp(false)} className="text-slate-400 hover:text-white font-bold transition-colors"><i data-lucide="arrow-left" className="w-4 h-4 inline mr-1"></i> Back to Login</button>
+                                </div>
+                            </form>
+                        )}
+                        
+                        <div className="mt-8 pt-4 border-t border-slate-800 text-center text-[10px] text-slate-400">
+                            <p className="font-semibold tracking-wider text-indigo-400 flex items-center justify-center gap-1">
+                                <i data-lucide="code" className="w-3.5 h-3.5 text-indigo-400"></i> Website built by HARIHARAN R
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. Header
+        const Header = ({ user, darkMode, setDarkMode, toggleSidebar, hasDraft, onOpenAddStaffModal }) => {
+            const [time, setTime] = useState(new Date());
+            useEffect(() => {
+                const timer = setInterval(() => setTime(new Date()), 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            return (
+                <header className="college-header-gradient text-white shadow-md sticky top-0 z-30">
+                    <div className="px-4 md:px-6 h-16 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button className="md:hidden p-2 hover:bg-white/10 rounded-lg" onClick={toggleSidebar}>
+                                <i data-lucide="menu" className="w-6 h-6"></i>
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden p-0.5">
+                                    <img src="./logo.jpg" alt="Paavai Logo" className="w-full h-full object-contain rounded" />
+                                </div>
+                                <div className="hidden sm:block">
+                                    <h1 className="font-bold text-sm leading-tight tracking-wide">PAAVAI ENGINEERING COLLEGE</h1>
+                                    <p className="text-xs text-indigo-200 font-medium">CSE - B | Attendance Portal</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                            <div className="hidden md:flex items-center gap-2 text-indigo-100 bg-black/20 px-3 py-1.5 rounded-full text-sm font-medium">
+                                <i data-lucide="clock" className="w-4 h-4"></i>
+                                {time.toLocaleTimeString()}
+                            </div>
+                            
+                            {hasDraft && (
+                                <span className="flex h-3 w-3 relative" title="Unsaved Draft">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                                </span>
+                            )}
+
+                            {user.role === 'owner' && (
+                                <button onClick={onOpenAddStaffModal} className="bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-750 dark:hover:bg-indigo-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 border border-indigo-400/20" title="Quick Add Staff">
+                                    <i data-lucide="user-plus" className="w-4 h-4"></i>
+                                    <span className="hidden sm:inline">Add Staff</span>
+                                </button>
+                            )}
+
+                            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                <i data-lucide={darkMode ? "sun" : "moon"} className="w-5 h-5"></i>
+                            </button>
+                            
+                            <div className="flex items-center gap-3 pl-4 border-l border-white/20">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-bold leading-tight">{user.name}</p>
+                                    <p className="text-xs text-indigo-200 capitalize">{user.role}</p>
+                                </div>
+                                <div className="w-9 h-9 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-indigo-300 font-bold">
+                                    {user.name.charAt(0)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+            );
+        };
+
+        // 4. Sidebar
+        const Sidebar = ({ user, activeTab, setActiveTab, onLogout, isMobile, show, closeSidebar }) => {
+            const menu = [
+                { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                ...(user?.role !== 'student' ? [{ id: 'mark-attendance', label: 'Mark Attendance', icon: 'check-square' }] : []),
+                { id: 'students', label: 'Students DB', icon: 'users' },
+                { id: 'history', label: 'History', icon: 'calendar' },
+                { id: 'reports', label: 'Reports', icon: 'bar-chart-3' },
+                { id: 'low-attendance', label: 'Low Attendance', icon: 'alert-triangle' },
+                ...(user?.role !== 'student' ? [{ id: 'settings', label: 'Settings', icon: 'settings' }] : [])
+            ];
+
+            const navClass = isMobile 
+                ? `fixed inset-y-0 left-0 transform ${show ? 'translate-x-0' : '-translate-x-full'} w-64 bg-slate-900 text-white transition-transform duration-300 ease-in-out z-50 flex flex-col`
+                : "hidden md:flex flex-col w-64 bg-slate-900 text-white min-h-[calc(100vh-4rem)] sticky top-16 border-r border-slate-800";
+
+            return (
+                <>
+                    {isMobile && show && <div className="fixed inset-0 bg-black/50 z-40" onClick={closeSidebar}></div>}
+                    <nav className={navClass}>
+                        {isMobile && (
+                            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-indigo-900">
+                                <span className="font-bold">Menu</span>
+                                <button onClick={closeSidebar}><i data-lucide="x" className="w-5 h-5"></i></button>
+                            </div>
+                        )}
+                        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                            {menu.map(item => (
+                                <button key={item.id} 
+                                    onClick={() => { setActiveTab(item.id); if(isMobile) closeSidebar(); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium ${
+                                        activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                    }`}>
+                                    <i data-lucide={item.icon} className="w-5 h-5"></i>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-4 border-t border-slate-800">
+                            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-rose-600 text-white rounded-lg transition-colors text-sm font-medium">
+                                <i data-lucide="log-out" className="w-4 h-4"></i> Logout
+                            </button>
+                        </div>
+                    </nav>
+                </>
+            );
+        };
+
+        // 5. Mobile Nav
+        const MobileNav = ({ user, activeTab, setActiveTab, toggleSidebar }) => {
+            const tabs = user?.role === 'student' ? [
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Home' },
+                { id: 'students', icon: 'users', label: 'Students' },
+                { id: 'history', icon: 'calendar', label: 'History' },
+                { id: 'reports', icon: 'bar-chart-3', label: 'Reports' },
+            ] : [
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Home' },
+                { id: 'mark-attendance', icon: 'check-square', label: 'Mark' },
+                { id: 'students', icon: 'users', label: 'Students' },
+                { id: 'history', icon: 'calendar', label: 'History' },
+            ];
+
+            return (
+                <div className="md:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-around z-30 pb-safe">
+                    {tabs.map(tab => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                            className={`flex flex-col items-center justify-center w-full py-3 ${activeTab === tab.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            <i data-lucide={tab.icon} className="w-5 h-5 mb-1"></i>
+                            <span className="text-[10px] font-medium">{tab.label}</span>
+                        </button>
+                    ))}
+                    <button onClick={toggleSidebar} className="flex flex-col items-center justify-center w-full py-3 text-slate-500 dark:text-slate-400">
+                        <i data-lucide="menu" className="w-5 h-5 mb-1"></i>
+                        <span className="text-[10px] font-medium">More</span>
+                    </button>
+                </div>
+            );
+        };
+
+        // 6. Dashboard
+        const DashboardPage = ({ students, history, setActiveTab, user }) => {
+            const today = new Date().toISOString().split('T')[0];
+            const todaySessions = history.filter(h => h.date === today);
+            
+            let todayTotal = 0, todayPresent = 0, todayAbsent = 0;
+            todaySessions.forEach(s => {
+                Object.values(s.records).forEach(v => {
+                    todayTotal++;
+                    if(v === 'P' || v === 'OD') todayPresent++;
+                    if(v === 'A') todayAbsent++;
+                });
+            });
+            const todayPerc = todayTotal > 0 ? Math.round((todayPresent/todayTotal)*100) : 0;
+            
+            const lowAttStudents = students.filter(s => s.stats.health === 'critical' || s.stats.health === 'warning').sort((a,b) => a.stats.percent - b.stats.percent).slice(0, 5);
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-indigo-600 text-white rounded-2xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold mb-1">Welcome back, {user.name.split(' ')[0]} 👋</h2>
+                            <p className="text-indigo-100">Ready to manage CSE-B attendance today?</p>
+                        </div>
+                        <button onClick={() => setActiveTab('mark-attendance')} className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold shadow-md hover:bg-indigo-50 transition-colors flex items-center gap-2">
+                            <i data-lucide="edit-3" className="w-5 h-5"></i> Mark Attendance Now
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="glass-card p-5 border-l-4 border-indigo-500">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Students</p>
+                            <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{students.length}</p>
+                        </div>
+                        <div className="glass-card p-5 border-l-4 border-green-500">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Today's Present</p>
+                            <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{todayPresent}</p>
+                        </div>
+                        <div className="glass-card p-5 border-l-4 border-rose-500">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Today's Absent</p>
+                            <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{todayAbsent}</p>
+                        </div>
+                        <div className="glass-card p-5 border-l-4 border-blue-500">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Today's Avg %</p>
+                            <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{todayPerc}%</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="glass-card p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Recent Sessions</h3>
+                                <button onClick={() => setActiveTab('history')} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View All</button>
+                            </div>
+                            <div className="space-y-3">
+                                {history.sort((a,b) => b.timestamp - a.timestamp).slice(0,5).map(session => (
+                                    <div key={session.id} className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors border border-slate-100 dark:border-slate-800">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded bg-indigo-100 dark:bg-indigo-900/30 flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                                <span className="text-xs font-bold">P{session.periodId}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm text-slate-900 dark:text-slate-200">{session.date}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Period {session.periodId} ({PERIODS.find(p=>p.id===session.periodId)?.time || ''})</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                {Object.values(session.records).filter(v => v==='P'||v==='OD').length} / {Object.keys(session.records).length}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="glass-card p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Action Required (Low %)</h3>
+                                <button onClick={() => setActiveTab('low-attendance')} className="text-sm text-rose-600 dark:text-rose-400 hover:underline">View All</button>
+                            </div>
+                            <div className="space-y-3">
+                                {lowAttStudents.map(student => (
+                                    <div key={student.id} className="flex justify-between items-center p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                {student.sno}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm text-slate-900 dark:text-slate-200">{student.name}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">{student.regNo}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                            student.stats.health === 'critical' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                        }`}>
+                                            {student.stats.percent}%
+                                        </span>
+                                    </div>
+                                ))}
+                                {lowAttStudents.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No students with low attendance.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 7. Mark Attendance Page
+        const MarkAttendancePage = ({ students, showToast, refreshData }) => {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [year, setYear] = useState(ACADEMIC_YEARS[0]);
+            const [semester, setSemester] = useState(SEMESTERS[4]);
+            const [periodId, setPeriodId] = useState(1);
+            const [records, setRecords] = useState({});
+            const [search, setSearch] = useState('');
+            const [showConfirm, setShowConfirm] = useState(false);
+            const [isDuplicate, setIsDuplicate] = useState(false);
+
+            useEffect(() => {
+                const draft = StorageService.getDraft();
+                if (draft) {
+                    setDate(draft.date);
+                    setYear(draft.academicYear);
+                    setSemester(draft.semester);
+                    setPeriodId(draft.periodId);
+                    setRecords(draft.records);
+                    showToast("Restored unsaved draft.", "info");
+                }
+            }, []);
+
+            useEffect(() => {
+                if (date && periodId) {
+                    const dup = StorageService.findDuplicateSession(date, periodId);
+                    setIsDuplicate(!!dup);
+                    if (dup && Object.keys(records).length === 0) {
+                        setRecords(dup.records);
+                    }
+                }
+            }, [date, periodId]);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    if (Object.keys(records).length > 0) {
+                        StorageService.saveDraft({ date, periodId, academicYear: year, semester, records });
+                    }
+                }, 1500);
+                return () => clearTimeout(timer);
+            }, [records, date, periodId, year, semester]);
+
+            const markAll = (status) => {
+                const newRecs = { ...records };
+                students.forEach(s => newRecs[s.id] = status);
+                setRecords(newRecs);
+            };
+
+            const markRemaining = (status) => {
+                const newRecs = { ...records };
+                students.forEach(s => { if (!newRecs[s.id]) newRecs[s.id] = status; });
+                setRecords(newRecs);
+            };
+
+            const toggleStatus = (studentId, status) => {
+                setRecords(prev => {
+                    const next = { ...prev };
+                    if (next[studentId] === status) delete next[studentId];
+                    else next[studentId] = status;
+                    return next;
+                });
+            };
+
+            const submitAttendance = () => {
+                const unmarked = students.filter(s => !records[s.id]).length;
+                if (unmarked > 0 && !confirm(`${unmarked} students are unmarked. Proceed anyway?`)) return;
+                
+                const dup = StorageService.findDuplicateSession(date, periodId);
+                const sessionData = {
+                    id: dup ? dup.id : null,
+                    date, periodId, academicYear: year, semester, records
+                };
+                
+                StorageService.saveHistorySession(sessionData);
+                refreshData();
+                showToast("Attendance saved successfully!", "success");
+                setRecords({});
+                setShowConfirm(false);
+            };
+
+            const filteredStudents = students.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.regNo.includes(search));
+            
+            let p=0, od=0, a=0, un=0;
+            students.forEach(s => {
+                if (records[s.id]==='P') p++;
+                else if (records[s.id]==='OD') od++;
+                else if (records[s.id]==='A') a++;
+                else un++;
+            });
+            const perc = (p+od+a) > 0 ? Math.round(((p+od)/(p+od+a))*100) : 0;
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-24">
+                    <div className="glass-card p-5">
+                        <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i data-lucide="calendar-check" className="w-5 h-5 text-indigo-500"></i> Setup Session
+                        </h2>
+                        {isDuplicate && (
+                            <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 p-3 rounded-lg text-sm font-medium flex items-center gap-2 border border-amber-200 dark:border-amber-800">
+                                <i data-lucide="alert-triangle" className="w-4 h-4"></i>
+                                This session already exists. Submitting will update the existing records.
+                            </div>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Date</label>
+                                <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Period</label>
+                                <select value={periodId} onChange={e=>setPeriodId(Number(e.target.value))} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    {PERIODS.map(p => <option key={p.id} value={p.id}>{p.name} ({p.time})</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Year</label>
+                                <select value={year} onChange={e=>setYear(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Semester</label>
+                                <select value={semester} onChange={e=>setSemester(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                        <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl text-center"><p className="text-xs font-bold text-slate-500">Total</p><p className="text-xl font-black dark:text-white">{students.length}</p></div>
+                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-xl text-center"><p className="text-xs font-bold text-green-600">Present</p><p className="text-xl font-black text-green-700 dark:text-green-400">{p}</p></div>
+                        <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-xl text-center"><p className="text-xs font-bold text-cyan-600">OD</p><p className="text-xl font-black text-cyan-700 dark:text-cyan-400">{od}</p></div>
+                        <div className="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl text-center"><p className="text-xs font-bold text-rose-600">Absent</p><p className="text-xl font-black text-rose-700 dark:text-rose-400">{a}</p></div>
+                        <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl text-center"><p className="text-xs font-bold text-slate-500">Unmarked</p><p className="text-xl font-black dark:text-white">{un}</p></div>
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl text-center"><p className="text-xs font-bold text-indigo-600">%</p><p className="text-xl font-black text-indigo-700 dark:text-indigo-400">{perc}%</p></div>
+                    </div>
+
+                    <div className="glass-card p-5">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                            <div className="relative w-full md:w-64">
+                                <i data-lucide="search" className="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" placeholder="Search student..." value={search} onChange={e=>setSearch(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                                <button onClick={()=>markAll('P')} className="whitespace-nowrap px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-sm font-bold transition-colors">Mark All Present</button>
+                                <button onClick={()=>markRemaining('P')} className="whitespace-nowrap px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg text-sm font-bold transition-colors">Remaining Present</button>
+                                <button onClick={()=>setRecords({})} className="whitespace-nowrap px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-lg text-sm font-bold transition-colors">Clear</button>
+                            </div>
+                        </div>
+
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-y border-slate-200 dark:border-slate-700">
+                                        <th className="py-3 px-4">S.No</th>
+                                        <th className="py-3 px-4">Reg No</th>
+                                        <th className="py-3 px-4">Student Name</th>
+                                        <th className="py-3 px-4">Cum. %</th>
+                                        <th className="py-3 px-4 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredStudents.map(student => (
+                                        <tr key={student.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <td className="py-3 px-4 text-sm font-medium dark:text-slate-300">{student.sno}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-500 dark:text-slate-400">{student.regNo}</td>
+                                            <td className="py-3 px-4 text-sm font-bold text-slate-800 dark:text-slate-100">{student.name}</td>
+                                            <td className="py-3 px-4">
+                                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                                                    student.stats.health === 'critical' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30' : student.stats.health === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30' : 'bg-green-100 text-green-700 dark:bg-green-900/30'
+                                                }`}>{student.stats.percent}%</span>
+                                            </td>
+                                            <td className="py-3 px-4 flex justify-center gap-2">
+                                                <button onClick={()=>toggleStatus(student.id, 'P')} className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${records[student.id]==='P' ? 'bg-green-600 text-white shadow-lg scale-110' : 'bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-500'}`}>P</button>
+                                                <button onClick={()=>toggleStatus(student.id, 'OD')} className={`w-14 h-10 rounded-lg font-bold text-base transition-all ${records[student.id]==='OD' ? 'bg-cyan-600 text-white shadow-lg scale-110' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:text-cyan-500'}`}>OD</button>
+                                                <button onClick={()=>toggleStatus(student.id, 'A')} className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${records[student.id]==='A' ? 'bg-rose-600 text-white shadow-lg scale-110' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-500'}`}>A</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden space-y-3">
+                            {filteredStudents.map(student => (
+                                <div key={student.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-slate-400">{student.sno}.</span>
+                                                <h4 className="font-bold text-slate-800 dark:text-slate-100">{student.name}</h4>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{student.regNo}</p>
+                                        </div>
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                            student.stats.health === 'critical' ? 'bg-rose-100 text-rose-700' : student.stats.health === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                                        }`}>{student.stats.percent}%</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>toggleStatus(student.id, 'P')} className={`flex-1 py-2 rounded-lg font-bold transition-all ${records[student.id]==='P' ? 'bg-green-600 text-white shadow-md' : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-500 border border-green-200 dark:border-green-800'}`}>Present</button>
+                                        <button onClick={()=>toggleStatus(student.id, 'OD')} className={`flex-1 py-2 rounded-lg font-bold transition-all ${records[student.id]==='OD' ? 'bg-cyan-600 text-white shadow-md' : 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-500 border border-cyan-200 dark:border-cyan-800'}`}>OD</button>
+                                        <button onClick={()=>toggleStatus(student.id, 'A')} className={`flex-1 py-2 rounded-lg font-bold transition-all ${records[student.id]==='A' ? 'bg-rose-600 text-white shadow-md' : 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-500 border border-rose-200 dark:border-rose-800'}`}>Absent</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Sticky Bottom Bar */}
+                    <div className="fixed bottom-0 md:bottom-0 left-0 md:left-64 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20 flex justify-between items-center mb-16 md:mb-0">
+                        <div className="hidden sm:block">
+                            <p className="text-sm font-bold dark:text-white">Session Progress</p>
+                            <p className="text-xs text-slate-500">{Object.keys(records).length} / {students.length} Marked</p>
+                        </div>
+                        <button onClick={()=>setShowConfirm(true)} disabled={Object.keys(records).length===0} className="w-full sm:w-auto bg-indigo-600 disabled:bg-slate-400 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
+                            <i data-lucide="save" className="w-5 h-5"></i> Submit Attendance
+                        </button>
+                    </div>
+
+                    {/* Confirm Modal */}
+                    {showConfirm && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
+                                <div className="bg-indigo-600 p-4 text-white">
+                                    <h3 className="font-bold text-lg flex items-center gap-2"><i data-lucide="check-circle" className="w-5 h-5"></i> Confirm Submission</h3>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg text-sm space-y-1 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                                        <p><span className="font-bold text-slate-500">Date:</span> {date}</p>
+                                        <p><span className="font-bold text-slate-500">Period:</span> Period {periodId} ({PERIODS.find(p=>p.id===periodId)?.time || ''})</p>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3 text-center">
+                                        <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><p className="text-xl font-bold text-green-700 dark:text-green-500">{p}</p><p className="text-xs font-medium text-green-600">Present</p></div>
+                                        <div className="p-2 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg"><p className="text-xl font-bold text-cyan-700 dark:text-cyan-500">{od}</p><p className="text-xs font-medium text-cyan-600 font-bold">OD</p></div>
+                                        <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg"><p className="text-xl font-bold text-rose-700 dark:text-rose-500">{a}</p><p className="text-xs font-medium text-rose-600">Absent</p></div>
+                                    </div>
+                                    {un > 0 && <p className="text-sm text-rose-500 font-bold text-center"><i data-lucide="alert-circle" className="w-4 h-4 inline mr-1"></i> {un} students are unmarked!</p>}
+                                </div>
+                                <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900">
+                                    <button onClick={()=>setShowConfirm(false)} className="px-5 py-2 rounded-lg font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800">Cancel</button>
+                                    <button onClick={submitAttendance} className="px-5 py-2 rounded-lg font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md">Confirm & Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // 8. Attendance History Page
+        const AttendanceHistoryPage = ({ history, students, setActiveTab, refreshData, showToast, user }) => {
+            const [search, setSearch] = useState('');
+
+            const sorted = [...history].sort((a,b) => b.timestamp - a.timestamp);
+            const filtered = sorted.filter(h => 
+                h.date.includes(search) || h.id.includes(search)
+            );
+
+            const handleDelete = (id) => {
+                if(confirm("Are you sure you want to delete this session? This cannot be undone.")) {
+                    StorageService.deleteHistorySession(id);
+                    refreshData();
+                    showToast("Session deleted", "success");
+                }
+            };
+
+            const handleEdit = (session) => {
+                StorageService.saveDraft(session);
+                setActiveTab('mark-attendance');
+            };
+
+            const doPDF = (session) => {
+                ExportService.exportPDF(session, students);
+            };
+
+            const doExcel = (session) => {
+                ExportService.exportExcel(session, students);
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-20">
+                    <div className="glass-card p-5 flex flex-col md:flex-row gap-4 justify-between items-center">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="calendar" className="w-5 h-5 text-indigo-500"></i> History
+                        </h2>
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <input type="date" value={search} onChange={e=>setSearch(e.target.value)} className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        {filtered.map(session => {
+                            let p=0, od=0, a=0;
+                            Object.values(session.records).forEach(v => {
+                                if(v==='P') p++;
+                                if(v==='OD') od++;
+                                if(v==='A') a++;
+                            });
+                            const total = p+od+a;
+                            const perc = total > 0 ? Math.round(((p+od)/total)*100) : 0;
+                            const periodObj = PERIODS.find(p => p.id == session.periodId);
+
+                            return (
+                                <div key={session.id} className="glass-card p-5 border-l-4 border-indigo-500 hover:border-indigo-600 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl text-center min-w-[70px]">
+                                            <p className="text-xs font-bold text-slate-500 uppercase">{new Date(session.date).toLocaleDateString('en-US',{weekday:'short'})}</p>
+                                            <p className="text-lg font-black text-slate-800 dark:text-white">{session.date.split('-')[2]}</p>
+                                            <p className="text-[10px] text-slate-500">{session.date.split('-')[1]}/{session.date.split('-')[0]}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-slate-800 dark:text-slate-100">{periodObj ? periodObj.name : `Period ${session.periodId}`} Session</h4>
+                                            <div className="flex gap-3 text-sm text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                                                <span className="flex items-center gap-1"><i data-lucide="clock" className="w-4 h-4"></i> {periodObj ? periodObj.time : ''}</span>
+                                                <span className="flex items-center gap-1"><i data-lucide="book" className="w-4 h-4"></i> {session.semester}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-6 w-full lg:w-auto">
+                                        <div className="flex gap-4 text-center">
+                                            <div><p className="text-xs text-slate-500">Present</p><p className="font-bold text-green-600">{p}</p></div>
+                                            <div><p className="text-xs text-slate-500">OD</p><p className="font-bold text-cyan-600">{od}</p></div>
+                                            <div><p className="text-xs text-slate-500">Absent</p><p className="font-bold text-rose-600">{a}</p></div>
+                                            <div><p className="text-xs text-slate-500">Avg %</p><p className="font-bold text-indigo-600">{perc}%</p></div>
+                                        </div>
+                                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block"></div>
+                                        <div className="flex gap-2 ml-auto lg:ml-0">
+                                            <button onClick={()=>doPDF(session)} title="PDF" className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/20 rounded-lg"><i data-lucide="file-text" className="w-5 h-5"></i></button>
+                                            <button onClick={()=>doExcel(session)} title="Excel" className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 rounded-lg"><i data-lucide="sheet" className="w-5 h-5"></i></button>
+                                            {user?.role !== 'student' && (
+                                                <>
+                                                    <button onClick={()=>handleEdit(session)} title="Edit" className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 rounded-lg"><i data-lucide="edit" className="w-5 h-5"></i></button>
+                                                    <button onClick={()=>handleDelete(session.id)} title="Delete" className="p-2 bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-400 rounded-lg"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {filtered.length === 0 && (
+                            <div className="text-center py-10 glass-card">
+                                <i data-lucide="calendar-x" className="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+                                <p className="text-slate-500 font-medium">No sessions found.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 9. Student Database Page
+        const StudentDatabasePage = ({ students, openStudentModal }) => {
+            const [search, setSearch] = useState('');
+            const [filterHealth, setFilterHealth] = useState('all');
+
+            const filtered = students.filter(s => {
+                const matchName = s.name.toLowerCase().includes(search.toLowerCase()) || s.regNo.includes(search);
+                const matchHealth = filterHealth === 'all' || s.stats.health === filterHealth;
+                return matchName && matchHealth;
+            });
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-20">
+                    <div className="glass-card p-5 flex flex-col lg:flex-row gap-4 justify-between items-center">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="users" className="w-5 h-5 text-indigo-500"></i> Student Database
+                        </h2>
+                        <div className="flex flex-wrap gap-3 w-full lg:w-auto justify-end items-center">
+                            <div className="relative flex-1 sm:flex-initial sm:w-60">
+                                <i data-lucide="search" className="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                            </div>
+                            <select value={filterHealth} onChange={e=>setFilterHealth(e.target.value)} className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="all">All Status</option>
+                                <option value="healthy">Healthy (≥75%)</option>
+                                <option value="warning">Warning (60-74%)</option>
+                                <option value="critical">Critical (&lt;60%)</option>
+                            </select>
+                            <button onClick={() => ExportService.exportStudentSummaryExcel(students)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow" title="Download Cumulative Attendance Summary Report">
+                                <i data-lucide="file-spreadsheet" className="w-4 h-4"></i> Download Attendance
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="glass-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                        <th className="py-4 px-4">S.No / Reg No</th>
+                                        <th className="py-4 px-4">Student Info</th>
+                                        <th className="py-4 px-4">Stats (P/OD/A)</th>
+                                        <th className="py-4 px-4 w-48">Attendance %</th>
+                                        <th className="py-4 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map(student => (
+                                        <tr key={student.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                            <td className="py-3 px-4">
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{student.sno}</p>
+                                                <p className="text-xs text-slate-500 font-mono">{student.regNo}</p>
+                                            </td>
+                                            <td className="py-3 px-4 font-bold text-sm text-slate-800 dark:text-slate-100">{student.name}</td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex gap-2 text-xs font-bold">
+                                                    <span className="text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded">{student.stats.present}</span>
+                                                    <span className="text-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 px-2 py-0.5 rounded">{student.stats.od}</span>
+                                                    <span className="text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded">{student.stats.absent}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-sm font-bold w-10 text-right ${
+                                                        student.stats.health === 'critical' ? 'text-rose-600' : student.stats.health === 'warning' ? 'text-amber-500' : 'text-green-600'
+                                                    }`}>{student.stats.percent}%</span>
+                                                    <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full ${
+                                                            student.stats.health === 'critical' ? 'bg-rose-500' : student.stats.health === 'warning' ? 'bg-amber-500' : 'bg-green-500'
+                                                        }`} style={{ width: `${student.stats.percent}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-right">
+                                                <button onClick={()=>openStudentModal(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 rounded-lg transition-colors inline-flex">
+                                                    <i data-lucide="external-link" className="w-5 h-5"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 10. Student Modal (Detailed Profile)
+        const StudentModal = ({ student, history, onClose }) => {
+            if (!student) return null;
+            
+            const studHistory = [];
+            
+            history.forEach(session => {
+                if(session.records[student.id]) {
+                    const status = session.records[student.id];
+                    studHistory.push({ date: session.date, period: session.periodId, status });
+                }
+            });
+
+            return (
+                <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl shadow-2xl animate-fade-in my-8 relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white z-10 transition-colors">
+                            <i data-lucide="x" className="w-5 h-5"></i>
+                        </button>
+                        
+                        {/* Header Banner */}
+                        <div className={`p-8 rounded-t-2xl text-white ${student.stats.health === 'critical' ? 'bg-gradient-to-r from-rose-700 to-rose-500' : student.stats.health === 'warning' ? 'bg-gradient-to-r from-amber-600 to-amber-500' : 'bg-gradient-to-r from-indigo-800 to-indigo-600'}`}>
+                            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                                <div className="w-24 h-24 bg-white/20 rounded-full border-4 border-white/30 flex items-center justify-center text-4xl font-black shadow-lg backdrop-blur-md">
+                                    {student.name.charAt(0)}
+                                </div>
+                                <div className="text-center md:text-left flex-1">
+                                    <h2 className="text-3xl font-black tracking-wide mb-1">{student.name}</h2>
+                                    <p className="text-white/80 font-mono text-lg mb-4">{student.regNo} | S.No: {student.sno}</p>
+                                    <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                        <div className="bg-black/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+                                            <p className="text-xs text-white/70 font-bold uppercase tracking-wider mb-1">Overall Attendance</p>
+                                            <p className="text-3xl font-black">{student.stats.percent}%</p>
+                                        </div>
+                                        <div className="bg-black/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+                                            <p className="text-xs text-white/70 font-bold uppercase tracking-wider mb-1">Total Classes</p>
+                                            <p className="text-3xl font-black">{student.stats.total}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 md:p-8 space-y-8">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4 text-center">
+                                    <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">Present</p>
+                                    <p className="text-3xl font-black text-green-700 dark:text-green-500">{student.stats.present}</p>
+                                </div>
+                                <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-100 dark:border-cyan-800 rounded-xl p-4 text-center">
+                                    <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1">OD</p>
+                                    <p className="text-3xl font-black text-cyan-700 dark:text-cyan-500">{student.stats.od}</p>
+                                </div>
+                                <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 rounded-xl p-4 text-center">
+                                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1">Absent</p>
+                                    <p className="text-3xl font-black text-rose-700 dark:text-rose-500">{student.stats.absent}</p>
+                                </div>
+                            </div>
+                            
+                            {/* Recent Activity */}
+                            <div>
+                                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="clock" className="w-5 h-5 text-indigo-500"></i> Recent Activity</h3>
+                                <div className="space-y-3">
+                                    {studHistory.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0, 5).map((log, i) => {
+                                        const periodObj = PERIODS.find(p => p.id === log.period);
+                                        return (
+                                            <div key={i} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-800 rounded-lg">
+                                                <div>
+                                                    <p className="text-sm font-bold dark:text-slate-200">{log.date}</p>
+                                                    <p className="text-xs text-slate-500">{periodObj ? periodObj.name + ' (' + periodObj.time + ')' : `Period ${log.period}`}</p>
+                                                </div>
+                                                <span className={`px-3 py-1 rounded-md text-xs font-bold ${log.status==='P'?'bg-green-100 text-green-700':log.status==='OD'?'bg-cyan-100 text-cyan-700':'bg-rose-100 text-rose-700'}`}>
+                                                    {log.status === 'P' ? 'Present' : log.status === 'OD' ? 'On Duty' : 'Absent'}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 11. Low Attendance Alerts Page
+        const LowAttendancePage = ({ students, openStudentModal, showToast }) => {
+            const lowAttStudents = students.filter(s => s.stats.percent < 75);
+
+            const handleExport = () => {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "PAAVAI ENGINEERING COLLEGE - CSE B\n";
+                csvContent += "Low Attendance Report (< 75%)\n\n";
+                csvContent += "S.No,Registration Number,Student Name,Attendance Percentage,Absences\n";
+                
+                lowAttStudents.forEach(s => {
+                    csvContent += `${s.sno},"${s.regNo}","${s.name}",${s.stats.percent}%,${s.stats.absent}\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "low_attendance_students_cse_b.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("Low attendance list exported successfully!", "success");
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-20">
+                    <div className="glass-card p-6 border-l-4 border-rose-500 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <i data-lucide="alert-triangle" className="w-5 h-5 text-rose-500"></i> Low Attendance Alerts
+                            </h2>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                Students with attendance below the mandatory 75% threshold.
+                            </p>
+                        </div>
+                        <button onClick={handleExport} disabled={lowAttStudents.length === 0}
+                            className="bg-rose-600 disabled:bg-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-rose-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="download" className="w-4 h-4"></i> Export Flagged List
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {lowAttStudents.map(student => (
+                            <div key={student.id} onClick={() => openStudentModal(student)}
+                                className="glass-card p-5 border-l-4 border-rose-500 hover:border-rose-600 cursor-pointer transition-all space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-mono font-bold text-slate-400">#{student.sno} • {student.regNo}</span>
+                                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${student.stats.percent < 60 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                                        {student.stats.percent}%
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-base text-slate-900 dark:text-white truncate">{student.name}</h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Anna University Condonation Risk</p>
+                                </div>
+                                <div className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 p-2 rounded-lg flex justify-between items-center">
+                                    <span>Absence Count: {student.stats.absent} classes</span>
+                                    <span>View Profile →</span>
+                                </div>
+                            </div>
+                        ))}
+                        {lowAttStudents.length === 0 && (
+                            <div className="col-span-full text-center py-10 glass-card">
+                                <i data-lucide="check-circle" className="w-12 h-12 text-green-500 mx-auto mb-3"></i>
+                                <p className="text-slate-500 font-medium">All students currently maintain ≥75% attendance!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 12. Monthly Reports Page
+        const ReportsPage = ({ students, history, openStudentModal, showToast }) => {
+            const [selectedYear, setSelectedYear] = useState('2026');
+            const [selectedMonth, setSelectedMonth] = useState('08');
+            const [search, setSearch] = useState('');
+
+            const years = ["2026", "2025", "2024"];
+            const months = [
+                { id: '01', name: 'January' }, { id: '02', name: 'February' }, { id: '03', name: 'March' },
+                { id: '04', name: 'April' }, { id: '05', name: 'May' }, { id: '06', name: 'June' },
+                { id: '07', name: 'July' }, { id: '08', name: 'August' }, { id: '09', name: 'September' },
+                { id: '10', name: 'October' }, { id: '11', name: 'November' }, { id: '12', name: 'December' }
+            ];
+
+            const filteredSessions = useMemo(() => {
+                return history.filter(session => {
+                    const sessYear = session.date.split('-')[0];
+                    const sessMonth = session.date.split('-')[1];
+                    return sessYear === selectedYear && sessMonth === selectedMonth;
+                });
+            }, [history, selectedYear, selectedMonth]);
+
+            const reportRows = useMemo(() => {
+                return students.map(student => {
+                    let present = 0, od = 0, absent = 0, total = 0;
+                    filteredSessions.forEach(session => {
+                        if (session.records[student.id]) {
+                            total++;
+                            if (session.records[student.id] === 'P') present++;
+                            if (session.records[student.id] === 'OD') od++;
+                            if (session.records[student.id] === 'A') absent++;
+                        }
+                    });
+                    const percent = total > 0 ? Math.round(((present + od) / total) * 100) : 100;
+                    return {
+                        ...student,
+                        total, present, od, absent, percent
+                    };
+                }).filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.regNo.includes(search));
+            }, [students, filteredSessions, search]);
+
+            const dailyTrends = useMemo(() => {
+                const datesMap = {};
+                filteredSessions.forEach(session => {
+                    if (!datesMap[session.date]) {
+                        datesMap[session.date] = { present: 0, total: 0 };
+                    }
+                    Object.values(session.records).forEach(status => {
+                        datesMap[session.date].total++;
+                        if (status === 'P' || status === 'OD') datesMap[session.date].present++;
+                    });
+                });
+                
+                return Object.keys(datesMap).sort().map(d => {
+                    const entry = datesMap[d];
+                    const pct = entry.total > 0 ? Math.round((entry.present / entry.total) * 100) : 0;
+                    return { date: d.split('-')[2], percent: pct };
+                });
+            }, [filteredSessions]);
+
+            const handleExport = () => {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += `PAAVAI ENGINEERING COLLEGE - CSE B\n`;
+                const monthName = months.find(m => m.id === selectedMonth)?.name;
+                csvContent += `Monthly Attendance Report: ${monthName} ${selectedYear}\n\n`;
+                csvContent += "S.No,Registration Number,Student Name,Total Classes,Present,OD,Absent,Attendance Percentage\n";
+                
+                reportRows.forEach(r => {
+                    csvContent += `${r.sno},"${r.regNo}","${r.name}",${r.total},${r.present},${r.od},${r.absent},${r.percent}%\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `monthly_report_${monthName}_${selectedYear}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("Report exported successfully!", "success");
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-20">
+                    <div className="glass-card p-6 border-l-4 border-indigo-600 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" className="w-5 h-5 text-indigo-500"></i> Monthly Reports & Charts
+                            </h2>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                Generate month-wise academic attendance lists and daily percentage trends.
+                            </p>
+                        </div>
+                        <button onClick={handleExport} disabled={reportRows.length === 0}
+                            className="bg-indigo-600 disabled:bg-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="download" className="w-4 h-4"></i> Export Monthly Report
+                        </button>
+                    </div>
+
+                    <div className="glass-card p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Year</label>
+                            <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Month</label>
+                            <select value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                {months.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Search Student</label>
+                            <input type="text" placeholder="Name or Reg No..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                        </div>
+                    </div>
+
+                    {dailyTrends.length > 0 ? (
+                        <div className="glass-card p-6">
+                            <h3 className="font-bold text-base mb-4 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="trending-up" className="w-4 h-4 text-indigo-500"></i> Attendance Trend (Daily Avg %)
+                            </h3>
+                            <div className="h-48 w-full flex items-end justify-between gap-2 pt-6 px-4 border-b border-l border-slate-200 dark:border-slate-700 relative">
+                                {dailyTrends.map((trend, i) => (
+                                    <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                        <div style={{ height: `${trend.percent}%` }} className="w-full bg-gradient-to-t from-indigo-600 to-indigo-400 hover:from-indigo-500 hover:to-indigo-300 rounded-t-sm transition-all duration-500 relative">
+                                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap shadow-md">
+                                                {trend.percent}%
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-400 mt-2 font-mono">{trend.date}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="glass-card p-10 text-center text-slate-500">
+                            <i data-lucide="bar-chart" className="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                            <p className="font-medium text-sm">No sessions marked for this combination of filters.</p>
+                        </div>
+                    )}
+
+                    <div className="glass-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                                        <th className="py-4 px-4 w-16">S.No</th>
+                                        <th className="py-4 px-4">Registration No</th>
+                                        <th className="py-4 px-4">Student Name</th>
+                                        <th className="py-4 px-4 text-center">Total Classes</th>
+                                        <th className="py-4 px-4 text-center">Present</th>
+                                        <th className="py-4 px-4 text-center">OD</th>
+                                        <th className="py-4 px-4 text-center">Absent</th>
+                                        <th className="py-4 px-4 text-right w-36">Attendance %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reportRows.map(r => (
+                                        <tr key={r.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                            <td className="py-3.5 px-4 text-sm font-medium text-slate-500">{r.sno}</td>
+                                            <td className="py-3.5 px-4 text-sm font-mono text-slate-600 dark:text-slate-400">{r.regNo}</td>
+                                            <td className="py-3.5 px-4 text-sm font-bold text-slate-800 dark:text-slate-100">
+                                                <button onClick={() => openStudentModal(r)} className="hover:text-indigo-600 outline-none text-left">{r.name}</button>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center text-sm font-bold">{r.total}</td>
+                                            <td className="py-3.5 px-4 text-center text-sm text-green-600 font-bold">{r.present}</td>
+                                            <td className="py-3.5 px-4 text-center text-sm text-cyan-600 font-bold">{r.od}</td>
+                                            <td className="py-3.5 px-4 text-center text-sm text-rose-600 font-bold">{r.absent}</td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <span className={`text-sm font-black px-2.5 py-1 rounded-md ${r.percent >= 75 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : r.percent >= 60 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                                                    {r.percent}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 13. Subject Management Page
+
+
+        // 14. Settings Page
+        const SettingsPage = ({ user, onUpdateUser, showToast, staffUsers, setStaffUsers }) => {
+            const [supabaseUrl, setSupabaseUrl] = React.useState(localStorage.getItem('supabase_url') || '');
+            const [supabaseKey, setSupabaseKey] = React.useState(localStorage.getItem('supabase_key') || '');
+            const [status, setStatus] = React.useState('');
+            const [loading, setLoading] = React.useState(false);
+            
+            // Staff management states for owner
+            const [passcode, setPasscode] = React.useState(localStorage.getItem('paavai_staff_passcode') || 'paavaistaff');
+            
+            // Add staff states
+            const [newStaffName, setNewStaffName] = React.useState('');
+            const [newStaffEmail, setNewStaffEmail] = React.useState('');
+            const [newStaffPassword, setNewStaffPassword] = React.useState('');
+
+            const handleSaveSupabase = (e) => {
+                e.preventDefault();
+                localStorage.setItem('supabase_url', supabaseUrl);
+                localStorage.setItem('supabase_key', supabaseKey);
+                showToast("Supabase configuration saved locally!", "success");
+            };
+
+            const testConnection = async () => {
+                if (!supabaseUrl || !supabaseKey) return setStatus('URL and Key are required.');
+                setLoading(true);
+                setStatus('Connecting...');
+                
+                try {
+                    if (window.supabase) {
+                        const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+                        const { data, error } = await client.from('students').select('*').limit(1);
+                        if (error) throw error;
+                        setStatus('Connection successful! Connected to cloud Supabase.');
+                        showToast("Connected to Supabase cloud!", "success");
+                    } else {
+                        throw new Error("Supabase library not loaded. Check network CDNs.");
+                    }
+                } catch (err) {
+                    setStatus(`Failed: ${err.message || 'Check your credentials and table policies.'}`);
+                    showToast("Supabase connection failed.", "error");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleToggleStatus = (emailToToggle) => {
+                const updated = staffUsers.map(u => {
+                    if (u.email.toLowerCase() === emailToToggle.toLowerCase()) {
+                        return { ...u, status: u.status === 'approved' ? 'pending' : 'approved' };
+                    }
+                    return u;
+                });
+                setStaffUsers(updated);
+                StorageService.saveStaffUsers(updated);
+                showToast("Staff user status updated!", "success");
+            };
+
+            const handleDeleteStaff = (emailToDelete) => {
+                if (emailToDelete === 'faculty@paavai.edu.in') {
+                    return showToast("Cannot delete pre-seeded faculty account.", "error");
+                }
+                if (confirm(`Are you sure you want to remove the staff user ${emailToDelete}?`)) {
+                    const updated = staffUsers.filter(u => u.email.toLowerCase() !== emailToDelete.toLowerCase());
+                    setStaffUsers(updated);
+                    StorageService.saveStaffUsers(updated);
+                    showToast("Staff user removed.", "success");
+                }
+            };
+
+            const handleSavePasscode = (e) => {
+                e.preventDefault();
+                localStorage.setItem('paavai_staff_passcode', passcode);
+                showToast("Fixed signup passcode updated!", "success");
+            };
+
+            const handleAddStaffSubmit = (e) => {
+                e.preventDefault();
+                if (!newStaffName || !newStaffEmail || !newStaffPassword) {
+                    return showToast("Please fill all staff fields.", "error");
+                }
+                const emailClean = newStaffEmail.trim();
+                if (staffUsers.some(u => u.email.toLowerCase() === emailClean.toLowerCase())) {
+                    return showToast("A staff user with this username/email already exists.", "error");
+                }
+                const newUser = {
+                    name: newStaffName.trim(),
+                    email: emailClean,
+                    password: newStaffPassword,
+                    role: 'staff',
+                    status: 'approved'
+                };
+                const updated = [...staffUsers, newUser];
+                setStaffUsers(updated);
+                StorageService.saveStaffUsers(updated);
+                showToast(`Staff member "${newStaffName}" added and approved!`, "success");
+                
+                setNewStaffName('');
+                setNewStaffEmail('');
+                setNewStaffPassword('');
+            };
+
+            const sqlSchema = `-- PAAVAI ENGINEERING COLLEGE CSE-B ATTENDANCE SCHEMA
+CREATE TABLE students (
+    id VARCHAR(50) PRIMARY KEY,
+    sno INTEGER,
+    reg_no VARCHAR(20) UNIQUE,
+    name VARCHAR(100)
+);
+
+CREATE TABLE attendance_sessions (
+    id VARCHAR(50) PRIMARY KEY,
+    session_date DATE,
+    period_id INTEGER,
+    academic_year VARCHAR(20),
+    semester VARCHAR(20),
+    records JSONB
+);`;
+
+            return (
+                <div className="space-y-6 animate-fade-in pb-20">
+                    <div className="glass-card p-6 border-l-4 border-indigo-600">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="settings" className="w-5 h-5 text-indigo-500"></i> Settings & Portal Configurations
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Configure database, view schema definitions, and manage staff user accounts.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                            {/* Owner Console */}
+                            {user.role === 'owner' && (
+                                <div className="glass-card p-6 space-y-4">
+                                    <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                        <i data-lucide="shield-check" className="w-5 h-5 text-indigo-500"></i> Owner Admin Console
+                                    </h3>
+                                    
+                                    {/* Set Signup Passcode */}
+                                    <form onSubmit={handleSavePasscode} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 border border-slate-200 dark:border-slate-700">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Global Staff Signup Passcode</p>
+                                                <p className="text-xs text-slate-500">Passcode staff must input to complete registration.</p>
+                                            </div>
+                                            <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-colors shadow">
+                                                Update Passcode
+                                            </button>
+                                        </div>
+                                        <input type="text" value={passcode} onChange={e=>setPasscode(e.target.value)} required
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm font-mono dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                                    </form>
+
+                                    {/* Add Staff Form */}
+                                    <form onSubmit={handleAddStaffSubmit} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                            <i data-lucide="user-plus" className="w-4 h-4 text-indigo-500"></i> Add Approved Staff Member
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 mb-1">Full Name</label>
+                                                <input type="text" placeholder="e.g. Prof. Kumar S" value={newStaffName} onChange={e=>setNewStaffName(e.target.value)} required
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 mb-1">Username / Email</label>
+                                                <input type="text" placeholder="e.g. kumar@paavai.edu.in" value={newStaffEmail} onChange={e=>setNewStaffEmail(e.target.value)} required
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-mono dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 mb-1">Set Password</label>
+                                                <input type="text" placeholder="Set password" value={newStaffPassword} onChange={e=>setNewStaffPassword(e.target.value)} required
+                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end pt-1">
+                                            <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow flex items-center gap-1.5">
+                                                <i data-lucide="check-circle" className="w-3.5 h-3.5"></i> Add & Approve Staff
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    {/* Staff Approvals Table */}
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Staff Account Approval Logs</p>
+                                        <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl">
+                                            <table className="w-full text-left text-xs">
+                                                <thead>
+                                                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-bold border-b border-slate-100 dark:border-slate-800">
+                                                        <th className="p-3">Staff Member</th>
+                                                        <th className="p-3">Role</th>
+                                                        <th className="p-3 text-center">Status</th>
+                                                        <th className="p-3 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {staffUsers.map(st => (
+                                                        <tr key={st.email} className="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                            <td className="p-3">
+                                                                <p className="font-bold dark:text-white">{st.name}</p>
+                                                                <p className="text-[10px] text-slate-400 font-mono">{st.email}</p>
+                                                            </td>
+                                                            <td className="p-3 font-semibold capitalize text-slate-500 dark:text-slate-400">{st.role}</td>
+                                                            <td className="p-3 text-center">
+                                                                <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[9px] ${st.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-500' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-500'}`}>
+                                                                    {st.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 text-right space-x-1">
+                                                                {st.role !== 'owner' && (
+                                                                    <>
+                                                                        <button onClick={() => handleToggleStatus(st.email)}
+                                                                            className={`px-2.5 py-1 rounded font-bold text-[10px] shadow transition-colors ${st.status === 'approved' ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
+                                                                            {st.status === 'approved' ? 'Revoke' : 'Approve'}
+                                                                        </button>
+                                                                        <button onClick={() => handleDeleteStaff(st.email)} title="Delete Staff Account"
+                                                                            className="px-2 py-1 rounded font-bold bg-slate-100 dark:bg-slate-800 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 transition-colors text-[10px]">
+                                                                            Remove
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* User Profile Card */}
+                            <div className="glass-card p-6 space-y-4">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="user-cog" className="w-5 h-5 text-indigo-500"></i> Profile Information
+                                </h3>
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 border border-slate-200 dark:border-slate-700">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Account Username:</span>
+                                        <span className="text-sm font-bold dark:text-white">{user.name}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Registered Email:</span>
+                                        <span className="text-sm font-mono text-indigo-600 dark:text-indigo-400 font-bold">{user.email}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Permission Level:</span>
+                                        <span className="text-xs font-black uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 px-2 py-0.5 rounded">{user.role}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Supabase connection setup */}
+                            <div className="glass-card p-6 space-y-4">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="database" className="w-5 h-5 text-indigo-500"></i> Cloud Sync Setup
+                                </h3>
+                                <form onSubmit={handleSaveSupabase} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1">Supabase URL</label>
+                                        <input type="text" placeholder="https://xxxxxx.supabase.co" value={supabaseUrl} onChange={e=>setSupabaseUrl(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-mono dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1">Anon Public Key</label>
+                                        <input type="password" placeholder="eyJhbGciOiJIUzI1NiIs..." value={supabaseKey} onChange={e=>setSupabaseKey(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-mono dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold transition-colors">Save Locally</button>
+                                        <button type="button" onClick={testConnection} disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-xs font-bold transition-colors">{loading ? 'Testing...' : 'Test Sync Connect'}</button>
+                                    </div>
+                                </form>
+                                {status && <p className="text-xs font-mono p-3 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 dark:text-indigo-400">{status}</p>}
+                            </div>
+                        </div>
+
+                        <div className="glass-card p-6 space-y-4 flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="file-code" className="w-5 h-5 text-indigo-500"></i> Database Schema SQL
+                                </h3>
+                                <button onClick={() => { navigator.clipboard.writeText(sqlSchema); showToast("SQL Schema copied to clipboard!", "success"); }}
+                                    className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                                    Copy SQL
+                                </button>
+                            </div>
+                            <pre className="flex-1 bg-slate-900 text-slate-300 font-mono text-[11px] p-4 rounded-xl overflow-auto leading-relaxed border border-slate-800">
+                                {sqlSchema}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 15. Add Staff Modal Component
+        const AddStaffModal = ({ isOpen, onClose, onAddStaff }) => {
+            const [name, setName] = React.useState('');
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+
+            React.useEffect(() => {
+                if (isOpen) {
+                    setName('');
+                    setEmail('');
+                    setPassword('');
+                }
+            }, [isOpen]);
+
+            React.useEffect(() => {
+                if (isOpen && window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
+                }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!name.trim() || !email.trim() || !password) return;
+                
+                const success = onAddStaff({
+                    name: name.trim(),
+                    email: email.trim(),
+                    password: password,
+                    role: 'staff',
+                    status: 'approved'
+                });
+                
+                if (success) {
+                    onClose();
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <i data-lucide="user-plus" className="w-5 h-5 text-indigo-500"></i> Add Staff Member
+                            </h3>
+                            <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Full Name</label>
+                                <input type="text" placeholder="e.g. Prof. Kumar S" value={name} onChange={e=>setName(e.target.value)} required
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Username / Email</label>
+                                <input type="text" placeholder="e.g. kumar@paavai.edu.in" value={email} onChange={e=>setEmail(e.target.value)} required
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Set Password</label>
+                                <input type="text" placeholder="Set password" value={password} onChange={e=>setPassword(e.target.value)} required
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-705 rounded-xl text-sm font-bold text-slate-650 dark:text-slate-350 transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-1.5">
+                                    <i data-lucide="check" className="w-4 h-4"></i> Add & Approve
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // MAIN APP COMPONENT
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [darkMode, setDarkMode] = useState(true); // Default dark
+            const [students, setStudents] = useState([]);
+            const [history, setHistory] = useState([]);
+            const [draft, setDraft] = useState(null);
+            const [toast, setToast] = useState({ message: '', type: 'info' });
+            const [sidebarShow, setSidebarShow] = useState(false);
+            const [selectedStudent, setSelectedStudent] = useState(null);
+            
+            // Shared staff list state for HOD owner approvals list + header modal addition
+            const [staffUsers, setStaffUsers] = useState([]);
+            const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
+            
+            const isInitialMount = React.useRef(true);
+            
+            // Initialization: fetch data from python backend database.json first
+            useEffect(() => {
+                StorageService.init();
+
+                const saveLocalToServer = async () => {
+                    try {
+                        const payload = {
+                            students: JSON.parse(localStorage.getItem('paavai_students') || '[]'),
+                            history: JSON.parse(localStorage.getItem('paavai_history') || '[]'),
+                            staffUsers: JSON.parse(localStorage.getItem('paavai_staff_users') || '[]'),
+                            passcode: localStorage.getItem('paavai_staff_passcode') || 'paavaistaff'
+                        };
+                        await fetch('/api/save', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        console.log("Local database uploaded to server.");
+                    } catch (e) {
+                        console.warn("Failed to upload local database to server:", e);
+                    }
+                };
+                
+                const loadServerData = async () => {
+                    try {
+                        const res = await fetch('/api/data');
+                        if (res.ok) {
+                            const serverData = await res.json();
+                            if (serverData && serverData.students && serverData.students.length > 0) {
+                                if (serverData.students) localStorage.setItem('paavai_students', JSON.stringify(serverData.students));
+                                if (serverData.history) localStorage.setItem('paavai_history', JSON.stringify(serverData.history));
+                                if (serverData.staffUsers) localStorage.setItem('paavai_staff_users', JSON.stringify(serverData.staffUsers));
+                                if (serverData.passcode) localStorage.setItem('paavai_staff_passcode', serverData.passcode);
+                                console.log("Successfully fetched and synchronized database from python server.");
+                            } else {
+                                console.log("Server database is empty. Uploading local database...");
+                                await saveLocalToServer();
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Could not connect to python server backend. Running in local browser-only offline mode:", err);
+                    }
+                };
+                
+                loadServerData().finally(() => {
+                    refreshData();
+                    const loggedIn = StorageService.getUser();
+                    if(loggedIn) setUser(loggedIn);
+                    
+                    // Allow sync effect to trigger after initial loads complete
+                    setTimeout(() => {
+                        isInitialMount.current = false;
+                    }, 500);
+                });
+                
+                // Set initial dark mode
+                if (darkMode) document.documentElement.classList.add('dark');
+            }, []);
+
+            // Watch state changes and sync to backend server database.json
+            useEffect(() => {
+                if (isInitialMount.current) return;
+                
+                const saveToServer = async () => {
+                    try {
+                        const payload = {
+                            students: students,
+                            history: history,
+                            staffUsers: staffUsers,
+                            passcode: localStorage.getItem('paavai_staff_passcode') || 'paavaistaff'
+                        };
+                        
+                        await fetch('/api/save', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        console.log("Database successfully synchronized to central server.");
+                    } catch (err) {
+                        console.warn("Server sync save failed (offline mode):", err);
+                    }
+                };
+                
+                saveToServer();
+            }, [students, history, staffUsers]);
+
+            // Icons
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            });
+
+            // Toggle Dark Mode
+            useEffect(() => {
+                if (darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }, [darkMode]);
+
+            const refreshData = useCallback(() => {
+                setStudents(StorageService.getStudents());
+                setHistory(StorageService.getHistory());
+                setDraft(StorageService.getDraft());
+                setStaffUsers(StorageService.getStaffUsers());
+            }, []);
+
+            const handleLogin = (u) => {
+                StorageService.setUser(u);
+                setUser(u);
+                showToast(`Welcome back, ${u.name}`, "success");
+            };
+
+            const handleUpdateUser = (u) => {
+                StorageService.setUser(u);
+                setUser(u);
+            };
+            
+            const handleLogout = () => {
+                StorageService.logout();
+                setUser(null);
+                setToast({ message: 'Logged out successfully.', type: 'info' });
+            };
+
+            const showToast = (message, type = 'info') => {
+                setToast({ message, type });
+            };
+
+            const handleAddStaff = (newStaff) => {
+                if (staffUsers.some(u => u.email.toLowerCase() === newStaff.email.toLowerCase())) {
+                    showToast("Staff user with this username/email already exists.", "error");
+                    return false;
+                }
+                const updated = [...staffUsers, newStaff];
+                setStaffUsers(updated);
+                StorageService.saveStaffUsers(updated);
+                showToast(`Staff member "${newStaff.name}" added successfully!`, "success");
+                return true;
+            };
+
+            if (!user) {
+                return <LoginPage onLogin={handleLogin} students={students} />;
+            }
+
+            return (
+                <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+                    <Header user={user} darkMode={darkMode} setDarkMode={setDarkMode} toggleSidebar={()=>setSidebarShow(!sidebarShow)} hasDraft={!!draft} onOpenAddStaffModal={() => setIsAddStaffOpen(true)} />
+                    
+                    <div className="flex flex-1 overflow-hidden">
+                        <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} isMobile={window.innerWidth < 768} show={sidebarShow} closeSidebar={()=>setSidebarShow(false)} />
+                        
+                        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+                            <div className="max-w-6xl mx-auto">
+                                {activeTab === 'dashboard' && <DashboardPage students={students} history={history} setActiveTab={setActiveTab} user={user} />}
+                                {activeTab === 'mark-attendance' && user.role !== 'student' && <MarkAttendancePage students={students} showToast={showToast} refreshData={refreshData} />}
+                                {activeTab === 'history' && <AttendanceHistoryPage history={history} students={students} setActiveTab={setActiveTab} refreshData={refreshData} showToast={showToast} user={user} />}
+                                {activeTab === 'students' && <StudentDatabasePage students={students} openStudentModal={setSelectedStudent} />}
+                                {activeTab === 'low-attendance' && <LowAttendancePage students={students} openStudentModal={setSelectedStudent} showToast={showToast} />}
+                                {activeTab === 'reports' && <ReportsPage students={students} history={history} openStudentModal={setSelectedStudent} showToast={showToast} />}
+                                {activeTab === 'settings' && user.role !== 'student' && <SettingsPage user={user} onUpdateUser={handleUpdateUser} showToast={showToast} staffUsers={staffUsers} setStaffUsers={setStaffUsers} />}
+                            </div>
+
+                            <footer className="w-full text-center py-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 mt-8 rounded-xl">
+                                <p className="font-medium tracking-wide">
+                                    Student Attendance Management System | Paavai Engineering College
+                                </p>
+                                <p className="mt-1 text-indigo-600 dark:text-indigo-400 font-bold tracking-wider flex items-center justify-center gap-1">
+                                    <i data-lucide="code" className="w-3.5 h-3.5 text-indigo-500"></i> Website built by HARIHARAN R
+                                </p>
+                            </footer>
+                        </main>
+                    </div>
+
+                    <MobileNav user={user} activeTab={activeTab} setActiveTab={setActiveTab} toggleSidebar={()=>setSidebarShow(true)} />
+                    <Toast message={toast.message} type={toast.type} onClose={()=>setToast({message:''})} />
+                    
+                    <StudentModal student={selectedStudent} history={history} onClose={()=>setSelectedStudent(null)} />
+                    <AddStaffModal isOpen={isAddStaffOpen} onClose={() => setIsAddStaffOpen(false)} onAddStaff={handleAddStaff} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
